@@ -62,7 +62,7 @@ fn main() {
         .get_matches();
     let verbose = matches.is_present("verbose");
     if verbose {
-        println!("Reading file {}", matches.value_of("file").unwrap());
+        eprintln!("Reading file {}", matches.value_of("file").unwrap());
     }
 }
 
