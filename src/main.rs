@@ -24,10 +24,29 @@ fn main() {
                 .long_help(
                     "Piet works by going through the pixels of an image.\n\
                      However, this makes piet images visually small when viewing them.\n\
-                     Thus, piet things in codels which consist of many pixels.\n\
+                     Thus, piet allows interpreting images in codels which consist of larger pixels blocks.\n\
                      Setting codel-size to 2 would mean a codel is the size of 2x2 pixels.",
                 )
                 .takes_value(true)
+                .required(false)
+                .validator(|s| {
+                    s.parse::<u32>()
+                        .map(|_| ())
+                        .map_err(|_| String::from("Must be a positive number!"))
+                }),
+        )
+        .arg(
+            Arg::with_name("max_steps")
+                .help("The max number of allowed execution steps")
+                .short("e")
+                .long("max-steps")
+                .long_help(
+                    "This stops the piet interpreter after the given number of steps and\n\
+                    solves the halting problem once and for all :)\n\
+                    Very useful to debug endless loops",
+                )
+                .takes_value(true)
+                .required(false)
                 .validator(|s| {
                     s.parse::<u32>()
                         .map(|_| ())
