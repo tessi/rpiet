@@ -65,6 +65,9 @@ fn main() {
         )
         .get_matches();
     let verbose = options.is_present("verbose");
+    let codel_size = options
+        .value_of("codel_size")
+        .map_or(1, |s| s.parse::<u32>().unwrap_or(1));
     let path = options.value_of("file").unwrap();
     if verbose {
         eprintln!("Reading file {}", options.value_of("file").unwrap());
@@ -85,6 +88,19 @@ fn main() {
             process::exit(1);
         }
     };
+    if verbose {
+        eprintln!(
+            "Parsed the file as valid PNG (width={}, height={})",
+            info.width, info.height
+        );
+    }
+    if info.width % codel_size != 0 || info.height % codel_size != 0 {
+        println!(
+            "Application error: codel_size {} does not fit into image dimensions ({}, {})",
+            codel_size, info.width, info.height
+        );
+        process::exit(1);
+    }
     let mut img_data = vec![0; info.buffer_size()];
     reader.next_frame(&mut img_data).unwrap_or_else(|e| {
         println!("Application error: {}", e);
