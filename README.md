@@ -1,6 +1,6 @@
 # `rpiet`, the piet interpreter in Rust 🖼
 
-[`piet`]() is a esoteric programming language which executes image files.
+[`piet`](http://www.dangermouse.net/esoteric/piet.html) is a esoteric programming language which executes image files.
 This is a piet interpreter written in Rust.
 
 ## State of this crate
