@@ -1,9 +1,13 @@
 #[macro_use]
 extern crate clap;
 use clap::{App, Arg};
+use png::ColorType::{Grayscale, GrayscaleAlpha, RGB, RGBA};
+use png::Decoder;
+use std::fs::File;
+use std::process;
 
 fn main() {
-    let matches = App::new("myapp")
+    let options = App::new("myapp")
         .version(crate_version!())
         .author("Philipp Tessenow <philipp@tessenow.org>")
         .about("An interpreter for the piet programming language")
@@ -60,9 +64,64 @@ fn main() {
                 .long("verbose")
         )
         .get_matches();
-    let verbose = matches.is_present("verbose");
+    let verbose = options.is_present("verbose");
+    let path = options.value_of("file").unwrap();
     if verbose {
-        eprintln!("Reading file {}", matches.value_of("file").unwrap());
+        eprintln!("Reading file {}", options.value_of("file").unwrap());
+    }
+    let file = File::open(path);
+    let file = match file {
+        Ok(file) => file,
+        Err(e) => {
+            println!("Application error: {}", e);
+            process::exit(1);
+        }
+    };
+    let decoder = Decoder::new(file);
+    let (info, mut reader) = match decoder.read_info() {
+        Ok(decoded) => decoded,
+        Err(e) => {
+            println!("Application error: {}", e);
+            process::exit(1);
+        }
+    };
+    let mut img_data = vec![0; info.buffer_size()];
+    reader.next_frame(&mut img_data).unwrap_or_else(|e| {
+        println!("Application error: {}", e);
+        process::exit(1);
+    });
+    let data = match info.color_type {
+        RGB => img_data,
+        RGBA => {
+            let mut vec = Vec::with_capacity(img_data.len() / 4 * 3);
+            for rgba in img_data.chunks(4) {
+                let r = rgba[0];
+                let g = rgba[1];
+                let b = rgba[2];
+                vec.extend([r, g, b].iter().cloned())
+            }
+            vec
+        }
+        Grayscale => {
+            let mut vec = Vec::with_capacity(img_data.len() * 3);
+            for g in img_data {
+                vec.extend([g, g, g].iter().cloned())
+            }
+            vec
+        }
+        GrayscaleAlpha => {
+            let mut vec = Vec::with_capacity(img_data.len() * 3);
+            for ga in img_data.chunks(2) {
+                let g = ga[0];
+                let a = ga[1];
+                vec.extend([g, g, g, a].iter().cloned())
+            }
+            vec
+        }
+        _ => unreachable!("uncovered color type"),
+    };
+    for rgb in data.chunks_exact(3) {
+        println!("{}, {}, {}", rgb[0], rgb[1], rgb[2]);
     }
 }
 
