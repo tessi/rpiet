@@ -136,8 +136,28 @@ fn main() {
         }
         _ => unreachable!("uncovered color type"),
     };
-    for rgb in data.chunks_exact(3) {
-        println!("{}, {}, {}", rgb[0], rgb[1], rgb[2]);
+    let pixels = data.chunks_exact(3).collect::<Vec<_>>();
+    let codels = pixels
+        .iter()
+        .step_by(codel_size as usize)
+        .collect::<Vec<_>>();
+    let rows = codels
+        .chunks_exact((info.width / codel_size) as usize)
+        .step_by(codel_size as usize)
+        .collect::<Vec<_>>();
+    if verbose {
+        eprintln!(
+            "Creating canvas with {} pixels per row and {} rows",
+            rows[0].len(),
+            rows.len()
+        );
+    }
+    for row in rows {
+        print!("row:");
+        for rgb in row {
+            print!(" ({}, {}, {})", rgb[0], rgb[1], rgb[2]);
+        }
+        println!("")
     }
 }
 
