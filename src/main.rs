@@ -68,6 +68,9 @@ fn main() {
     let codel_size = options
         .value_of("codel_size")
         .map_or(1, |s| s.parse::<u32>().unwrap_or(1));
+    let _max_steps = options
+        .value_of("max_steps")
+        .map_or(-1, |s| s.parse::<i32>().unwrap_or(-1));
     let path = options.value_of("file").unwrap();
     if verbose {
         eprintln!("Reading file {}", options.value_of("file").unwrap());
