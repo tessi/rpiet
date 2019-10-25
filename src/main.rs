@@ -147,7 +147,7 @@ fn main() {
         .collect::<Vec<_>>();
     if verbose {
         eprintln!(
-            "Creating canvas with {} pixels per row and {} rows",
+            "Creating canvas with {} codels per row and {} rows",
             rows[0].len(),
             rows.len()
         );
