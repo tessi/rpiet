@@ -1,81 +1,22 @@
-#[macro_use]
 extern crate clap;
-use clap::{App, Arg};
+extern crate png;
+
 use png::ColorType::{Grayscale, GrayscaleAlpha, RGB, RGBA};
 use png::Decoder;
+
 use std::fs::File;
 use std::process;
 
+mod cmd_options;
+use cmd_options::*;
+
 fn main() {
-    let options = App::new("myapp")
-        .version(crate_version!())
-        .author("Philipp Tessenow <philipp@tessenow.org>")
-        .about("An interpreter for the piet programming language")
-        .arg(
-            Arg::with_name("file")
-                .help("The image to execute. Supports png files only")
-                .default_value("input.png")
-                .index(1)
-                .required(true)
-                .validator(is_png),
-        )
-        .arg(
-            Arg::with_name("codel_size")
-                .help("The length of a codel in pixels")
-                .default_value("1")
-                .short("c")
-                .long("codel-size")
-                .long_help(
-                    "Piet works by going through the pixels of an image.\n\
-                     However, this makes piet images visually small when viewing them.\n\
-                     Thus, piet allows interpreting images in codels which consist of larger pixels blocks.\n\
-                     Setting codel-size to 2 would mean a codel is the size of 2x2 pixels.",
-                )
-                .takes_value(true)
-                .required(false)
-                .validator(|s| {
-                    s.parse::<u32>()
-                        .map(|_| ())
-                        .map_err(|_| String::from("Must be a positive number!"))
-                }),
-        )
-        .arg(
-            Arg::with_name("max_steps")
-                .help("The max number of allowed execution steps")
-                .short("e")
-                .long("max-steps")
-                .long_help(
-                    "This stops the piet interpreter after the given number of steps and\n\
-                    solves the halting problem once and for all :)\n\
-                    Very useful to debug endless loops",
-                )
-                .takes_value(true)
-                .required(false)
-                .validator(|s| {
-                    s.parse::<u32>()
-                        .map(|_| ())
-                        .map_err(|_| String::from("Must be a positive number!"))
-                }),
-        )
-        .arg(
-            Arg::with_name("verbose")
-                .help("Logs debug information to stderr")
-                .short("v")
-                .long("verbose")
-        )
-        .get_matches();
-    let verbose = options.is_present("verbose");
-    let codel_size = options
-        .value_of("codel_size")
-        .map_or(1, |s| s.parse::<u32>().unwrap_or(1));
-    let _max_steps = options
-        .value_of("max_steps")
-        .map_or(-1, |s| s.parse::<i32>().unwrap_or(-1));
-    let path = options.value_of("file").unwrap();
-    if verbose {
-        eprintln!("Reading file {}", options.value_of("file").unwrap());
+    let clap_args = &clap_options();
+    let options = cmd_options(&clap_args);
+    if options.verbose {
+        eprintln!("Reading file {}", options.file_path);
     }
-    let file = File::open(path);
+    let file = File::open(options.file_path);
     let file = match file {
         Ok(file) => file,
         Err(e) => {
@@ -91,16 +32,16 @@ fn main() {
             process::exit(1);
         }
     };
-    if verbose {
+    if options.verbose {
         eprintln!(
             "Parsed the file as valid PNG (width={}, height={})",
             info.width, info.height
         );
     }
-    if info.width % codel_size != 0 || info.height % codel_size != 0 {
+    if info.width % options.codel_size != 0 || info.height % options.codel_size != 0 {
         println!(
             "Application error: codel_size {} does not fit into image dimensions ({}, {})",
-            codel_size, info.width, info.height
+            options.codel_size, info.width, info.height
         );
         process::exit(1);
     }
@@ -142,13 +83,13 @@ fn main() {
     let pixels = data.chunks_exact(3).collect::<Vec<_>>();
     let codels = pixels
         .iter()
-        .step_by(codel_size as usize)
+        .step_by(options.codel_size as usize)
         .collect::<Vec<_>>();
     let rows = codels
-        .chunks_exact((info.width / codel_size) as usize)
-        .step_by(codel_size as usize)
+        .chunks_exact((info.width / options.codel_size) as usize)
+        .step_by(options.codel_size as usize)
         .collect::<Vec<_>>();
-    if verbose {
+    if options.verbose {
         eprintln!(
             "Creating canvas with {} codels per row and {} rows",
             rows[0].len(),
@@ -161,13 +102,5 @@ fn main() {
             print!(" ({}, {}, {})", rgb[0], rgb[1], rgb[2]);
         }
         println!("")
-    }
-}
-
-fn is_png(val: String) -> Result<(), String> {
-    if val.ends_with(".png") {
-        Ok(())
-    } else {
-        Err(String::from("the file format must be png."))
     }
 }
