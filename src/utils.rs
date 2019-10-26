@@ -6,7 +6,22 @@ use std::vec::Vec;
 
 use crate::cmd_options::CmdOptions;
 
-pub fn create_canvas<'a>(file: &'a File, options: CmdOptions<'a>) -> Vec<Vec<(u8, u8, u8)>> {
+pub fn create_canvas(file: &File, options: CmdOptions) -> Vec<Vec<(u8, u8, u8)>> {
+    let (bytes, info) = parse_file(file, &options);
+    let bytes = convert_to_rgb(bytes, info.color_type);
+    let pixels = group_pixels(bytes);
+    let canvas = reduce_to_codels_and_group_into_rows(pixels, options.codel_size, info.width);
+    if options.verbose {
+        eprintln!(
+            "Creating canvas with {} codels per row and {} rows",
+            canvas[0].len(),
+            canvas.len()
+        );
+    }
+    canvas
+}
+
+fn parse_file(file: &File, options: &CmdOptions) -> (Vec<u8>, png::OutputInfo) {
     let decoder = Decoder::new(file);
     let (info, mut reader) = match decoder.read_info() {
         Ok(decoded) => decoded,
@@ -28,12 +43,16 @@ pub fn create_canvas<'a>(file: &'a File, options: CmdOptions<'a>) -> Vec<Vec<(u8
         );
         process::exit(1);
     }
-    let mut img_data = vec![0; info.buffer_size()];
-    reader.next_frame(&mut img_data).unwrap_or_else(|e| {
+    let mut data = vec![0; info.buffer_size()];
+    reader.next_frame(&mut data).unwrap_or_else(|e| {
         println!("Application error: {}", e);
         process::exit(1);
     });
-    let data = match info.color_type {
+    (data, info)
+}
+
+fn convert_to_rgb(img_data: Vec<u8>, color_type: png::ColorType) -> Vec<u8> {
+    match color_type {
         RGB => img_data,
         RGBA => {
             let mut vec = Vec::with_capacity(img_data.len() / 4 * 3);
@@ -62,26 +81,28 @@ pub fn create_canvas<'a>(file: &'a File, options: CmdOptions<'a>) -> Vec<Vec<(u8
             vec
         }
         _ => unreachable!("uncovered color type"),
-    };
-    let pixels = data
+    }
+}
+
+fn group_pixels(bytes: Vec<u8>) -> Vec<(u8, u8, u8)> {
+    bytes
         .chunks_exact(3)
         .map(|rgb| (rgb[0], rgb[1], rgb[2]))
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+}
+
+fn reduce_to_codels_and_group_into_rows(
+    pixels: Vec<(u8, u8, u8)>,
+    codel_size: u32,
+    width: u32,
+) -> Vec<Vec<(u8, u8, u8)>> {
     let codels = pixels
         .into_iter()
-        .step_by(options.codel_size as usize)
+        .step_by(codel_size as usize)
         .collect::<Vec<_>>();
-    let canvas = codels
-        .chunks_exact((info.width / options.codel_size) as usize)
-        .step_by(options.codel_size as usize)
+    codels
+        .chunks_exact((width / codel_size) as usize)
+        .step_by(codel_size as usize)
         .map(|row| Vec::from(row))
-        .collect::<Vec<_>>();
-    if options.verbose {
-        eprintln!(
-            "Creating canvas with {} codels per row and {} rows",
-            canvas[0].len(),
-            canvas.len()
-        );
-    }
-    canvas
+        .collect::<Vec<_>>()
 }
