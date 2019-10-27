@@ -6,8 +6,8 @@ use std::vec::Vec;
 
 use crate::cmd_options::CmdOptions;
 
-pub fn create_canvas(file: &File, options: CmdOptions) -> Vec<Vec<(u8, u8, u8)>> {
-    let (bytes, info) = parse_file(file, &options);
+pub fn create_canvas(file: &File, options: &CmdOptions) -> Vec<Vec<(u8, u8, u8)>> {
+    let (bytes, info) = parse_file(file, options);
     let bytes = convert_to_rgb(bytes, info.color_type);
     let pixels = group_pixels(bytes);
     let canvas = reduce_to_codels_and_group_into_rows(pixels, options.codel_size, info.width);

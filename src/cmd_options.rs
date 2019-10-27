@@ -5,6 +5,7 @@ pub struct CmdOptions<'a> {
     pub codel_size: u32,
     pub max_steps: u128,
     pub unlimited_steps: bool,
+    pub unknown_white: bool,
     pub file_path: &'a str,
 }
 
@@ -92,5 +93,6 @@ pub fn cmd_options<'a>(options: &'a ArgMatches) -> CmdOptions<'a> {
         max_steps: if max_steps < 0 { 0 } else { max_steps as u128 },
         unlimited_steps: max_steps < 0,
         file_path: file_path,
+        unknown_white: true, // TODO: add a command line option so the user can configure this
     }
 }

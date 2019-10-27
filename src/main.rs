@@ -1,13 +1,14 @@
 extern crate clap;
 extern crate png;
 
+mod cmd_options;
+mod interpreter;
+mod utils;
+
+use cmd_options::*;
+use interpreter::Interpreter;
 use std::fs::File;
 use std::process;
-
-mod cmd_options;
-use cmd_options::*;
-
-mod utils;
 
 fn main() {
     let clap_args = &clap_options();
@@ -24,12 +25,15 @@ fn main() {
             process::exit(1);
         }
     };
-    let canvas = utils::create_canvas(&file, options);
-    for row in canvas {
-        print!("row:");
-        for rgb in row {
-            print!(" ({}, {}, {})", rgb.0, rgb.1, rgb.2);
+    let canvas = utils::create_canvas(&file, &options);
+    let mut interpreter = Interpreter::from_rgb_rows(canvas, &options);
+    if options.verbose {
+        eprintln!("Start State:   {}", interpreter);
+    }
+    while interpreter.is_alive() {
+        interpreter.advance();
+        if options.verbose {
+            eprintln!("Current State: {}", interpreter);
         }
-        println!("")
     }
 }
