@@ -91,14 +91,8 @@ impl<'a> Interpreter<'a> {
         rgb_rows: Vec<Vec<(u8, u8, u8)>>,
         options: &CmdOptions,
     ) -> Interpreter<'a> {
-        let mut canvas = Vec::with_capacity(rgb_rows.len());
-        for (y, rgb_row) in rgb_rows.into_iter().enumerate() {
-            let mut codels = Vec::with_capacity(rgb_row.len());
-            for (x, rgb) in rgb_row.into_iter().enumerate() {
-                codels.push(rgb_to_codel(rgb, x, y, options.unknown_white));
-            }
-            canvas.push(codels);
-        }
+        let canvas = create_canvas(rgb_rows, options);
+        let canvas = detect_blocks(canvas);
 
         Interpreter {
             dp: DP_RIGHT,
@@ -121,136 +115,169 @@ impl<'a> Interpreter<'a> {
     }
 }
 
+fn create_canvas<'a>(
+    rgb_rows: Vec<Vec<(u8, u8, u8)>>,
+    options: &CmdOptions,
+) -> Vec<Vec<Codel<'a>>> {
+    let mut canvas = Vec::with_capacity(rgb_rows.len());
+    for (y, rgb_row) in rgb_rows.into_iter().enumerate() {
+        let mut codels = Vec::with_capacity(rgb_row.len());
+        for (x, rgb) in rgb_row.into_iter().enumerate() {
+            codels.push(rgb_to_codel(rgb, x, y, options.unknown_white));
+        }
+        canvas.push(codels);
+    }
+    canvas
+}
+
 fn rgb_to_codel<'a>(rgb: (u8, u8, u8), x: usize, y: usize, unknown_white: bool) -> Codel<'a> {
     match rgb {
         (0x00, 0x00, 0x00) => Codel::White { x: x, y: y },
         (0xFF, 0xFF, 0xFF) => Codel::Black { x: x, y: y },
+        // light red
         (0xFF, 0xC0, 0xC0) => Codel::Color {
             x: x,
             y: y,
             hue: 0,
             light: 0,
             block: &None,
-        }, // light red
+        },
+        // red
         (0xFF, 0x00, 0x00) => Codel::Color {
             x: x,
             y: y,
             hue: 0,
             light: 1,
             block: &None,
-        }, //       red
+        },
+        // dark  red
         (0xC0, 0x00, 0x00) => Codel::Color {
             x: x,
             y: y,
             hue: 0,
             light: 2,
             block: &None,
-        }, // dark  red
+        },
+        // light yellow
         (0xFF, 0xFF, 0xC0) => Codel::Color {
             x: x,
             y: y,
             hue: 1,
             light: 0,
             block: &None,
-        }, // light yellow
+        },
+        // yellow
         (0xFF, 0xFF, 0x00) => Codel::Color {
             x: x,
             y: y,
             hue: 1,
             light: 1,
             block: &None,
-        }, //       yellow
+        },
+        // dark  yellow
         (0xC0, 0xC0, 0x00) => Codel::Color {
             x: x,
             y: y,
             hue: 1,
             light: 2,
             block: &None,
-        }, // dark  yellow
+        },
+        // light green
         (0xC0, 0xFF, 0xC0) => Codel::Color {
             x: x,
             y: y,
             hue: 2,
             light: 0,
             block: &None,
-        }, // light green
+        },
+        // green
         (0x00, 0xFF, 0x00) => Codel::Color {
             x: x,
             y: y,
             hue: 2,
             light: 1,
             block: &None,
-        }, //       green
+        },
+        // dark  green
         (0x00, 0xC0, 0x00) => Codel::Color {
             x: x,
             y: y,
             hue: 2,
             light: 2,
             block: &None,
-        }, // dark  green
+        },
+        // light cyan
         (0xC0, 0xFF, 0xFF) => Codel::Color {
             x: x,
             y: y,
             hue: 3,
             light: 0,
             block: &None,
-        }, // light cyan
+        },
+        // cyan
         (0x00, 0xFF, 0xFF) => Codel::Color {
             x: x,
             y: y,
             hue: 3,
             light: 1,
             block: &None,
-        }, //       cyan
+        },
+        // dark  cyan
         (0x00, 0xC0, 0xC0) => Codel::Color {
             x: x,
             y: y,
             hue: 3,
             light: 2,
             block: &None,
-        }, // dark  cyan
+        },
+        // light blue
         (0xC0, 0xC0, 0xFF) => Codel::Color {
             x: x,
             y: y,
             hue: 4,
             light: 0,
             block: &None,
-        }, // light blue
+        },
+        // blue
         (0x00, 0x00, 0xFF) => Codel::Color {
             x: x,
             y: y,
             hue: 4,
             light: 1,
             block: &None,
-        }, //       blue
+        },
+        // dark  blue
         (0x00, 0x00, 0xC0) => Codel::Color {
             x: x,
             y: y,
             hue: 4,
             light: 2,
             block: &None,
-        }, // dark  blue
+        },
+        // light magenta
         (0xFF, 0xC0, 0xFF) => Codel::Color {
             x: x,
             y: y,
             hue: 5,
             light: 0,
             block: &None,
-        }, // light magenta
+        },
+        // magenta
         (0xFF, 0x00, 0xFF) => Codel::Color {
             x: x,
             y: y,
             hue: 5,
             light: 1,
             block: &None,
-        }, //       magenta
+        },
+        // dark  magenta
         (0xC0, 0x00, 0xC0) => Codel::Color {
             x: x,
             y: y,
             hue: 5,
             light: 2,
             block: &None,
-        }, // dark  magenta
+        },
         _ => {
             if unknown_white {
                 Codel::White { x: x, y: y }
@@ -259,6 +286,10 @@ fn rgb_to_codel<'a>(rgb: (u8, u8, u8), x: usize, y: usize, unknown_white: bool) 
             }
         }
     }
+}
+
+fn detect_blocks<'a>(canvas: Vec<Vec<Codel<'a>>>) -> Vec<Vec<Codel<'a>>> {
+    canvas
 }
 
 impl fmt::Display for Interpreter<'_> {
