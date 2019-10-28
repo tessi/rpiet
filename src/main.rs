@@ -28,11 +28,6 @@ fn main() {
     let canvas = utils::create_canvas(&file, &options);
     let mut interpreter = Interpreter::from_rgb_rows(canvas, &options);
     if options.verbose {
-        eprintln!("Canvas: {:?}", interpreter.canvas);
-        eprintln!("Blocks: {}", interpreter.blocks.len());
-        for block in interpreter.blocks.iter() {
-            eprintln!("Block: {}", block);
-        }
         eprintln!("Start State:   {}", interpreter);
     }
     while interpreter.is_alive() {

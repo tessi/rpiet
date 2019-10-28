@@ -294,8 +294,7 @@ fn create_canvas<'a>(rgb_rows: Vec<Vec<(u8, u8, u8)>>, options: &CmdOptions) -> 
 }
 
 fn rgb_to_codel<'a>(rgb: (u8, u8, u8), x: usize, y: usize, unknown_white: bool) -> Codel {
-    eprint!("Inspecting pixel {:?}", rgb);
-    let foo = match rgb {
+    match rgb {
         (0x00, 0x00, 0x00) => Codel::Black { x: x, y: y },
         (0xFF, 0xFF, 0xFF) => Codel::White { x: x, y: y },
         // light red
@@ -442,17 +441,15 @@ fn rgb_to_codel<'a>(rgb: (u8, u8, u8), x: usize, y: usize, unknown_white: bool) 
             light: 2,
             block_index: None,
         },
-        _ => {
-            eprint!(" unknown color");
+        (r, g, b) => {
+            eprintln!("Parsed unknown codel color ({r}, {g}, {b}) / (#{r:02X}{g:02X}{b:02X}) at pos ({x},{y})", r=r, g=g, b=b, x=x, y=y);
             if unknown_white {
                 Codel::White { x: x, y: y }
             } else {
                 Codel::Black { x: x, y: y }
             }
         }
-    };
-    eprintln!(" matched to {}", foo);
-    foo
+    }
 }
 
 impl fmt::Display for Interpreter {
