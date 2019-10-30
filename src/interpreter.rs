@@ -3,13 +3,51 @@ use std::fmt;
 use crate::block_exit::BlockExit;
 use crate::cmd_options::CmdOptions;
 
-// pub const DP_UP: u8 = 0;
-pub const DP_RIGHT: u8 = 1;
-// pub const DP_DOWN: u8 = 2;
-// pub const DP_LEFT: u8 = 3;
+// TODO: this file is too big, probably needs being split up
+// TODO: we needs tests (also for other modules)
+// TODO: needs better module/method level documentation
 
-// pub const CC_RIGHT: u8 = 0;
-pub const CC_LEFT: u8 = 1;
+const MAX_ALLOWED__POINTER_TOGGLES: u8 = 8;
+
+#[derive(Debug)]
+enum DirectionPointer {
+    Up,
+    Right,
+    Down,
+    Left,
+}
+
+impl fmt::Display for DirectionPointer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DirectionPointer::Up => write!(f, "up"),
+            DirectionPointer::Right => write!(f, "right"),
+            DirectionPointer::Down => write!(f, "down"),
+            DirectionPointer::Left => write!(f, "left"),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum CodelChooser {
+    Right,
+    Left,
+}
+
+impl fmt::Display for CodelChooser {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CodelChooser::Right => write!(f, "right"),
+            CodelChooser::Left => write!(f, "left"),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum Counters {
+    DirectionPointer,
+    CodelChooser,
+}
 
 #[derive(Debug)]
 struct Block {
@@ -72,8 +110,8 @@ impl fmt::Display for Codel {
 
 #[derive(Debug)]
 pub struct Interpreter {
-    dp: u8,
-    cc: u8,
+    dp: DirectionPointer,
+    cc: CodelChooser,
     alive: bool,
     stack: Vec<i64>,
     step_counter: u128,
@@ -84,6 +122,8 @@ pub struct Interpreter {
     width: usize,
     height: usize,
     current_position: (usize, usize),
+    toggled_pointers_without_move: u8,
+    last_toggled_pointer: Counters,
 }
 
 impl Interpreter {
@@ -92,8 +132,8 @@ impl Interpreter {
         let width = canvas[0].len();
         let height = canvas.len();
         let mut interpreter = Interpreter {
-            dp: DP_RIGHT,
-            cc: CC_LEFT,
+            dp: DirectionPointer::Right,
+            cc: CodelChooser::Left,
             alive: true,
             stack: Vec::with_capacity(64),
             step_counter: 0,
@@ -104,6 +144,8 @@ impl Interpreter {
             width: width,
             height: height,
             current_position: (0, 0),
+            toggled_pointers_without_move: 0,
+            last_toggled_pointer: Counters::DirectionPointer,
         };
         interpreter.detect_blocks();
         interpreter.assign_codels_to_blocks();
@@ -117,10 +159,59 @@ impl Interpreter {
 
     pub fn advance(&mut self) -> () {
         self.step_counter += 1;
-        if !self.unlimited_steps && self.step_counter >= self.max_steps {
-            self.alive = false;
+        if self.max_steps_reached() || self.program_should_end() {
+            self.exit();
             return;
         }
+        match self.find_next_codel() {
+            Some((codel, traveled_through_white)) => {
+                self.toggled_pointers_without_move = 0;
+                // TODO: set new position, execute command depending on block change
+            }
+            None => {
+                self.toogle_counters();
+                self.toggled_pointers_without_move += 1;
+                return;
+            }
+        }
+    }
+
+    fn find_next_codel(&self) -> Option<(Codel, bool)> {
+        // TODO: return the actual next codel instead of this fake thing
+        None
+    }
+
+    fn max_steps_reached(&self) -> bool {
+        !self.unlimited_steps && self.step_counter >= self.max_steps
+    }
+
+    fn program_should_end(&self) -> bool {
+        self.toggled_pointers_without_move >= MAX_ALLOWED__POINTER_TOGGLES
+    }
+
+    fn toogle_counters(&mut self) {
+        match self.last_toggled_pointer {
+            Counters::DirectionPointer => {
+                self.last_toggled_pointer = Counters::CodelChooser;
+                self.cc = match self.cc {
+                    CodelChooser::Right => CodelChooser::Left,
+                    CodelChooser::Left => CodelChooser::Right,
+                };
+            }
+            Counters::CodelChooser => {
+                self.last_toggled_pointer = Counters::DirectionPointer;
+                self.dp = match self.dp {
+                    DirectionPointer::Up => DirectionPointer::Right,
+                    DirectionPointer::Right => DirectionPointer::Down,
+                    DirectionPointer::Down => DirectionPointer::Left,
+                    DirectionPointer::Left => DirectionPointer::Up,
+                };
+            }
+        }
+    }
+
+    fn exit(&mut self) {
+        self.alive = false;
     }
 
     fn assign_codels_to_blocks(&mut self) -> () {
@@ -472,8 +563,8 @@ impl fmt::Display for Interpreter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Interpreter<dp: {}, cc: {}, alive: {}, steps: {}, stack: {:?}>",
-            self.dp, self.cc, self.alive, self.step_counter, self.stack
+            "Interpreter<dp: {}, cc: {}, alive: {}, steps: {}, pointer_toggles_without_move: {}, stack: {:?}>",
+            self.dp, self.cc, self.alive, self.step_counter, self.toggled_pointers_without_move, self.stack
         )
     }
 }
