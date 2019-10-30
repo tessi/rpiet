@@ -6,7 +6,7 @@
 
 #[derive(Debug)]
 pub struct BlockExit {
-    exits: [[(usize, usize); 2]; 4],
+    pub exits: [[(usize, usize); 2]; 4],
 }
 
 impl BlockExit {

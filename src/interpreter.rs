@@ -43,6 +43,26 @@ impl fmt::Display for CodelChooser {
     }
 }
 
+enum Command {
+    Push,
+    Pop,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Mod,
+    Not,
+    Greater,
+    Pointer,
+    Switch,
+    Duplicate,
+    Roll,
+    InNumber,
+    InChar,
+    OutNumber,
+    OutChar,
+}
+
 #[derive(Debug)]
 enum Counters {
     DirectionPointer,
@@ -55,6 +75,34 @@ struct Block {
     hue: u8,
     light: u8,
     block_exit: Option<BlockExit>,
+}
+
+impl Block {
+    fn exit_coordinates(&self, dp: &DirectionPointer, cc: &CodelChooser) -> Option<(usize, usize)> {
+        if let Some(block_exit) = &self.block_exit {
+            let coord = match dp {
+                DirectionPointer::Up => match cc {
+                    CodelChooser::Right => block_exit.exits[0][1],
+                    CodelChooser::Left => block_exit.exits[0][0],
+                },
+                DirectionPointer::Right => match cc {
+                    CodelChooser::Right => block_exit.exits[1][1],
+                    CodelChooser::Left => block_exit.exits[1][0],
+                },
+                DirectionPointer::Down => match cc {
+                    CodelChooser::Right => block_exit.exits[2][0],
+                    CodelChooser::Left => block_exit.exits[2][1],
+                },
+                DirectionPointer::Left => match cc {
+                    CodelChooser::Right => block_exit.exits[3][0],
+                    CodelChooser::Left => block_exit.exits[3][1],
+                },
+            };
+            Some(coord)
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Display for Block {
@@ -163,22 +211,107 @@ impl Interpreter {
             self.exit();
             return;
         }
-        match self.find_next_codel() {
-            Some((codel, traveled_through_white)) => {
+        let command = match self.find_next_codel() {
+            Some((new_position, traveled_through_white)) => {
                 self.toggled_pointers_without_move = 0;
-                // TODO: set new position, execute command depending on block change
+                let old_position = self.current_position;
+                self.current_position = new_position;
+                if !traveled_through_white {
+                    Some(self.command_to_execute(old_position, new_position))
+                } else {
+                    None
+                }
             }
             None => {
                 self.toogle_counters();
                 self.toggled_pointers_without_move += 1;
-                return;
+                None
             }
-        }
+        };
+        if let Some(command) = command {
+            self.execute(command)
+        };
     }
 
-    fn find_next_codel(&self) -> Option<(Codel, bool)> {
-        // TODO: return the actual next codel instead of this fake thing
+    fn execute(&mut self, command: Command) {
+        // TODO: implement commands to execute
+    }
+
+    fn command_to_execute(
+        &mut self,
+        old_position: (usize, usize),
+        new_position: (usize, usize),
+    ) -> Command {
+        Command::Add // TODO: return actual commands
+    }
+
+    fn find_next_codel(&self) -> Option<((usize, usize), bool)> {
+        let current_block_index = match self.current_codel() {
+            Codel::Color {
+                x: _x,
+                y: _y,
+                hue: _hue,
+                light: _light,
+                block_index,
+            } => block_index,
+            _ => return None,
+        };
+        let &current_block_index = match current_block_index {
+            Some(i) => i,
+            None => return None,
+        };
+
+        let coord = self.blocks[current_block_index].exit_coordinates(&self.dp, &self.cc);
+        let mut coord = match coord {
+            Some(coord) => coord,
+            None => return None,
+        };
+
+        let mut traveled_through_white = false;
+        while let Some(next_codel) = self.find_next_codel_from(coord) {
+            match *next_codel {
+                Codel::Black { x: _, y: _ } => break,
+                Codel::White { x, y } => {
+                    traveled_through_white = true;
+                    coord = (x, y);
+                }
+                Codel::Color {
+                    x,
+                    y,
+                    hue: _,
+                    light: _,
+                    block_index,
+                } => {
+                    let block_index = match block_index {
+                        Some(i) => i,
+                        None => return None,
+                    };
+                    if current_block_index != block_index {
+                        return Some(((x, y), traveled_through_white));
+                    }
+                    coord = (x, y);
+                }
+            }
+        }
         None
+    }
+
+    fn find_next_codel_from(&self, start: (usize, usize)) -> Option<&Codel> {
+        let next_coords = match self.dp {
+            DirectionPointer::Up => coord_up(start, self.width, self.height),
+            DirectionPointer::Right => coord_right(start, self.width, self.height),
+            DirectionPointer::Down => coord_down(start, self.width, self.height),
+            DirectionPointer::Left => coord_left(start, self.width, self.height),
+        };
+        next_coords.map(|coord| self.codel_for(coord))
+    }
+
+    fn current_codel(&self) -> &Codel {
+        self.codel_for(self.current_position)
+    }
+
+    fn codel_for(&self, coord: (usize, usize)) -> &Codel {
+        &self.canvas[coord.1][coord.0]
     }
 
     fn max_steps_reached(&self) -> bool {
@@ -563,8 +696,8 @@ impl fmt::Display for Interpreter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Interpreter<dp: {}, cc: {}, alive: {}, steps: {}, pointer_toggles_without_move: {}, stack: {:?}>",
-            self.dp, self.cc, self.alive, self.step_counter, self.toggled_pointers_without_move, self.stack
+            "Interpreter<dp: {}, cc: {}, pos: {:?} alive: {}, steps: {}, pointer_toggles_without_move: {}, stack: {:?}>",
+            self.dp, self.cc, self.current_position, self.alive, self.step_counter, self.toggled_pointers_without_move, self.stack
         )
     }
 }
