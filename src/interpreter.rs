@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::block_exit::BlockExit;
 use crate::cmd_options::CmdOptions;
 
 // pub const DP_UP: u8 = 0;
@@ -11,10 +12,11 @@ pub const DP_RIGHT: u8 = 1;
 pub const CC_LEFT: u8 = 1;
 
 #[derive(Debug)]
-pub struct Block {
+struct Block {
     codel_coordinates: Vec<(usize, usize)>,
     hue: u8,
     light: u8,
+    block_exit: Option<BlockExit>,
 }
 
 impl fmt::Display for Block {
@@ -30,7 +32,7 @@ impl fmt::Display for Block {
 }
 
 #[derive(Debug)]
-pub enum Codel {
+enum Codel {
     Color {
         x: usize,
         y: usize,
@@ -77,10 +79,11 @@ pub struct Interpreter {
     step_counter: u128,
     max_steps: u128,
     unlimited_steps: bool,
-    pub canvas: Vec<Vec<Codel>>,
-    pub blocks: Vec<Block>,
+    canvas: Vec<Vec<Codel>>,
+    blocks: Vec<Block>,
     width: usize,
     height: usize,
+    current_position: (usize, usize),
 }
 
 impl Interpreter {
@@ -100,9 +103,11 @@ impl Interpreter {
             blocks: Vec::new(),
             width: width,
             height: height,
+            current_position: (0, 0),
         };
         interpreter.detect_blocks();
         interpreter.assign_codels_to_blocks();
+        interpreter.find_exits_for_blocks();
         interpreter
     }
 
@@ -111,10 +116,14 @@ impl Interpreter {
     }
 
     pub fn advance(&mut self) -> () {
-        self.alive = false;
+        self.step_counter += 1;
+        if !self.unlimited_steps && self.step_counter >= self.max_steps {
+            self.alive = false;
+            return;
+        }
     }
 
-    pub fn assign_codels_to_blocks(&mut self) -> () {
+    fn assign_codels_to_blocks(&mut self) -> () {
         for row in self.canvas.iter_mut() {
             for codel in row.iter_mut() {
                 if let Codel::Color {
@@ -134,7 +143,7 @@ impl Interpreter {
         }
     }
 
-    pub fn detect_blocks(&mut self) -> () {
+    fn detect_blocks(&mut self) -> () {
         let mut visited: Vec<Vec<bool>> = vec![vec![false; self.width]; self.height];
         for row in self.canvas.iter() {
             for codel in row.iter() {
@@ -153,6 +162,7 @@ impl Interpreter {
                         codel_coordinates: Vec::new(),
                         hue: *hue,
                         light: *light,
+                        block_exit: None,
                     };
                     self.blocks.push(block);
                     let new_block_index = self.blocks.len() - 1;
@@ -237,6 +247,12 @@ impl Interpreter {
                     }
                 }
             }
+        }
+    }
+
+    fn find_exits_for_blocks(&mut self) -> () {
+        for block in self.blocks.iter_mut() {
+            block.block_exit = Some(BlockExit::from_coords(&block.codel_coordinates));
         }
     }
 }
