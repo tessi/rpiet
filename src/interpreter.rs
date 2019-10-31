@@ -277,12 +277,12 @@ impl Command {
                             eprintln!("execute ROLL({}, {})", depth, rolls);
                         }
                         if depth != 0 {
-                            let mut substack =
-                                stack[stack.len() - depth as usize..stack.len()].to_vec();
+                            let mut substack: Vec<_> =
+                                stack.drain(stack.len() - depth as usize..).collect();
                             if rolls > 0 {
                                 substack.rotate_right(rolls as usize);
                             } else {
-                                substack.rotate_left(rolls as usize);
+                                substack.rotate_left((rolls * -1) as usize);
                             }
                             stack.append(&mut substack);
                         }
