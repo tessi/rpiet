@@ -261,6 +261,44 @@ impl Command {
                     }
                 }
             }
+            Command::Roll => {
+                if stack.len() >= 2 {
+                    let rolls = stack.pop().unwrap();
+                    let depth = stack.pop().unwrap();
+                    if depth < 0 {
+                        if verbose_logging {
+                            eprintln!("skip executing ROLL due to a negative roll depth");
+                        }
+                        stack.push(depth);
+                        stack.push(rolls);
+                    }
+                    if stack.len() >= depth as usize {
+                        if verbose_logging {
+                            eprintln!("execute ROLL({}, {})", depth, rolls);
+                        }
+                        if depth != 0 {
+                            let mut substack =
+                                stack[stack.len() - depth as usize..stack.len()].to_vec();
+                            if rolls > 0 {
+                                substack.rotate_right(rolls as usize);
+                            } else {
+                                substack.rotate_left(rolls as usize);
+                            }
+                            stack.append(&mut substack);
+                        }
+                    } else {
+                        if verbose_logging {
+                            eprintln!("skip executing ROLL due to not enough values on the stack");
+                        }
+                        stack.push(depth);
+                        stack.push(rolls);
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing ROLL due to not enough values on the stack");
+                    }
+                }
+            }
             Command::OutChar => {
                 if let Some(last) = stack.pop() {
                     if last >= 0 && last <= (u32::max_value() as i64) {
