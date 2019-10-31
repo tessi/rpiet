@@ -75,6 +75,18 @@ impl Command {
                 }
                 stack.push(block_size as i64)
             }
+            Command::Duplicate => {
+                if let Some(&last) = stack.last() {
+                    if verbose_logging {
+                        eprintln!("execute DUPLICATE");
+                    }
+                    stack.push(last)
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing DUPLICATE due to empty stack");
+                    }
+                }
+            }
             _ => {
                 if verbose_logging {
                     eprintln!("command not implemented: {:?}", self);
@@ -256,9 +268,6 @@ impl Interpreter {
     }
 
     fn execute(&mut self, command: Command, old_position: (usize, usize)) {
-        if self.verbose_logging {
-            eprintln!("Executing Command: {:?}", command);
-        }
         if let Codel::Color { block_index, .. } = self.canvas[old_position.1][old_position.0] {
             if let Some(block_index) = block_index {
                 let block_size = self.blocks[block_index].size();
