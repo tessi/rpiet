@@ -147,7 +147,9 @@ impl Command {
                     let b = stack.pop().unwrap();
                     if a == 0 {
                         if verbose_logging {
-                            eprintln!("skip executing DIVIDE due to not being able to divide by zero");
+                            eprintln!(
+                                "skip executing DIVIDE due to not being able to divide by zero"
+                            );
                         }
                     } else {
                         if verbose_logging {
@@ -178,6 +180,22 @@ impl Command {
                 } else {
                     if verbose_logging {
                         eprintln!("skip executing MOD due to not enough values on the stack");
+                    }
+                }
+            }
+            Command::Not => {
+                if let Some(a) = stack.pop() {
+                    if verbose_logging {
+                        eprintln!("execute NOT({})", a);
+                    }
+                    if a == 0 {
+                        stack.push(1)
+                    } else {
+                        stack.push(0)
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing NOT due to empty stack");
                     }
                 }
             }
