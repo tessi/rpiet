@@ -87,6 +87,20 @@ impl Command {
                     }
                 }
             }
+            Command::Add => {
+                if stack.len() >= 2 {
+                    let a = stack.pop().unwrap();
+                    let b = stack.pop().unwrap();
+                    if verbose_logging {
+                        eprintln!("execute ADD({}, {})", a, b);
+                    }
+                    stack.push(a + b);
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing ADD due to not enough values on the stack");
+                    }
+                }
+            }
             _ => {
                 if verbose_logging {
                     eprintln!("command not implemented: {:?}", self);
