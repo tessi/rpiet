@@ -4,7 +4,13 @@ version = "0.1.0"
 authors = ["Philipp Tessenow <philipp@tessenow.org>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "An interpreter for Piet, the esoteric programming language"
+documentation = "https://github.com/tessi/rpiet/"
+homepage = "https://github.com/tessi/rpiet/"
+repository = "https://github.com/tessi/rpiet/"
+
+license = "MIT"
+license-file = "LICENSE.txt"
 
 [dependencies]
 clap = "~2.33.0"
