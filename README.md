@@ -11,11 +11,11 @@ Read more about how images are executed [at the Piet homepage](http://www.danger
 
 ## State of this crate
 
-This is my current "I learn some Rust" project.
-I will expand it every time I have some minutes to work on it, but don't expect it to be complete anytime soon.
-This project is likely to become my bikeshedding target to learn some Rust concepts and won't be able to execute actual piet images soon.
+It is possible to run some Piet programs in it (I verified a couple of hello world images from the Piet homepage), please report any bugs you find - the specification is somewhat loose :)
 
-However, feel free to watch this space and give me feedback on the code if you feel like it. 🌻
+"Sliding" (wording of the spec, not mine) through white codels may be buggy when reaching black/edge codels.
+
+The implementation is sometimes hacky - partly because I'm starting with Rust and am not yet writing ideomatic Rust everywhere, partly because I wanted things to work first and make them beautiful later.
 
 ## Contributing
 
