@@ -18,6 +18,7 @@ fn main() {
     if options.verbose {
         eprintln!("Reading file {}", options.file_path);
     }
+
     let file = File::open(options.file_path);
     let file = match file {
         Ok(file) => file,

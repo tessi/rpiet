@@ -104,7 +104,7 @@ impl Command {
                     let a = stack.pop().unwrap();
                     let b = stack.pop().unwrap();
                     if verbose_logging {
-                        eprintln!("execute ADD({}, {})", a, b);
+                        eprintln!("execute ADD({}, {})", b, a);
                     }
                     stack.push(a + b);
                 } else {
@@ -132,7 +132,7 @@ impl Command {
                     let a = stack.pop().unwrap();
                     let b = stack.pop().unwrap();
                     if verbose_logging {
-                        eprintln!("execute MULTIPLY({}, {})", a, b);
+                        eprintln!("execute MULTIPLY({}, {})", b, a);
                     }
                     stack.push(a * b);
                 } else {
@@ -151,13 +151,33 @@ impl Command {
                         }
                     } else {
                         if verbose_logging {
-                            eprintln!("execute DIVIDE({}, {})", a, b);
+                            eprintln!("execute DIVIDE({}, {})", b, a);
                         }
                         stack.push(b / a);
                     }
                 } else {
                     if verbose_logging {
                         eprintln!("skip executing DIVIDE due to not enough values on the stack");
+                    }
+                }
+            }
+            Command::Mod => {
+                if stack.len() >= 2 {
+                    let a = stack.pop().unwrap();
+                    let b = stack.pop().unwrap();
+                    if a == 0 {
+                        if verbose_logging {
+                            eprintln!("skip executing MOD due to not being able to modulo by zero");
+                        }
+                    } else {
+                        if verbose_logging {
+                            eprintln!("execute MOD({}, {})", b, a);
+                        }
+                        stack.push(b.rem_euclid(a));
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing MOD due to not enough values on the stack");
                     }
                 }
             }
