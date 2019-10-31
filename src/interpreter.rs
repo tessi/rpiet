@@ -361,6 +361,25 @@ impl Command {
                     }
                 }
             }
+            Command::InChar => {
+                let mut buffer = String::new();
+                if let Ok(_) = std::io::stdin().read_line(&mut buffer) {
+                    if let Some(chr) = buffer.chars().next() {
+                        if verbose_logging {
+                            eprintln!("executed IN_CHAR({} -> {})", chr, chr as i64);
+                        }
+                        stack.push(chr as i64);
+                    } else {
+                        if verbose_logging {
+                            eprintln!("skip executing IN_CHAR() because input was empty");
+                        }
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing IN_CHAR() because input could read");
+                    }
+                }
+            }
         }
     }
 }
