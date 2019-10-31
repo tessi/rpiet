@@ -1,3 +1,4 @@
+use std::char;
 use std::fmt;
 
 use crate::block_exit::BlockExit;
@@ -112,6 +113,33 @@ impl Command {
                 } else {
                     if verbose_logging {
                         eprintln!("skip executing MULTIPLY due to not enough values on the stack");
+                    }
+                }
+            }
+            Command::OutChar => {
+                if let Some(last) = stack.pop() {
+                    if last >= 0 && last <= (u32::max_value() as i64) {
+                        let c = char::from_u32(last as u32);
+                        if let Some(c) = c {
+                            if verbose_logging {
+                                eprintln!("execute OUT_CHAR({} -> {})", last, c);
+                            }
+                            print!("{}", c);
+                        } else {
+                            if verbose_logging {
+                                eprintln!("skip executing OUT_CHAR due invalid char");
+                            }
+                            stack.push(last)
+                        }
+                    } else {
+                        if verbose_logging {
+                            eprintln!("skip executing OUT_CHAR due invalid char");
+                        }
+                        stack.push(last)
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing OUT_CHAR due to empty stack");
                     }
                 }
             }
