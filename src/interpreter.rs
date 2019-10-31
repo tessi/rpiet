@@ -102,6 +102,20 @@ impl Command {
                     }
                 }
             }
+            Command::Subtract => {
+                if stack.len() >= 2 {
+                    let a = stack.pop().unwrap();
+                    let b = stack.pop().unwrap();
+                    if verbose_logging {
+                        eprintln!("execute SUBTRACT({}, {})", b, a);
+                    }
+                    stack.push(b - a);
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing SUBTRACT due to not enough values on the stack");
+                    }
+                }
+            }
             Command::Multiply => {
                 if stack.len() >= 2 {
                     let a = stack.pop().unwrap();
