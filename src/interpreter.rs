@@ -76,6 +76,17 @@ impl Command {
                 }
                 stack.push(block_size as i64)
             }
+            Command::Pop => {
+                if stack.pop().is_some() {
+                    if verbose_logging {
+                        eprintln!("execute POP");
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing POP due to empty stack");
+                    }
+                }
+            }
             Command::Duplicate => {
                 if let Some(&last) = stack.last() {
                     if verbose_logging {
