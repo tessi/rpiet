@@ -10,7 +10,6 @@ homepage = "https://github.com/tessi/rpiet/"
 repository = "https://github.com/tessi/rpiet/"
 
 license = "MIT"
-license-file = "LICENSE.txt"
 
 [dependencies]
 clap = "~2.33.0"
