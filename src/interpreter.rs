@@ -8,6 +8,8 @@ use crate::cmd_options::CmdOptions;
 // TODO: needs better module/method level documentation
 
 const MAX_ALLOWED__POINTER_TOGGLES: u8 = 8;
+const LIGHT_LEVELS: u8 = 3;
+const HUE_LEVELS: u8 = 6;
 
 #[derive(Debug)]
 enum DirectionPointer {
@@ -43,6 +45,7 @@ impl fmt::Display for CodelChooser {
     }
 }
 
+#[derive(Debug)]
 enum Command {
     Push,
     Pop,
@@ -165,6 +168,7 @@ pub struct Interpreter {
     step_counter: u128,
     max_steps: u128,
     unlimited_steps: bool,
+    verbose_logging: bool,
     canvas: Vec<Vec<Codel>>,
     blocks: Vec<Block>,
     width: usize,
@@ -187,6 +191,7 @@ impl Interpreter {
             step_counter: 0,
             max_steps: options.max_steps,
             unlimited_steps: options.unlimited_steps,
+            verbose_logging: options.verbose,
             canvas: canvas,
             blocks: Vec::new(),
             width: width,
@@ -205,7 +210,7 @@ impl Interpreter {
         self.alive
     }
 
-    pub fn advance(&mut self) -> () {
+    pub fn advance(&mut self) {
         self.step_counter += 1;
         if self.max_steps_reached() || self.program_should_end() {
             self.exit();
@@ -217,7 +222,7 @@ impl Interpreter {
                 let old_position = self.current_position;
                 self.current_position = new_position;
                 if !traveled_through_white {
-                    Some(self.command_to_execute(old_position, new_position))
+                    self.command_to_execute(old_position, new_position)
                 } else {
                     None
                 }
@@ -234,26 +239,62 @@ impl Interpreter {
     }
 
     fn execute(&mut self, command: Command) {
-        // TODO: implement commands to execute
+        if self.verbose_logging {
+            eprintln!("Executing Command: {:?}", command);
+        }
     }
 
     fn command_to_execute(
         &mut self,
         old_position: (usize, usize),
         new_position: (usize, usize),
-    ) -> Command {
-        Command::Add // TODO: return actual commands
+    ) -> Option<Command> {
+        match self.light_and_hue_difference(old_position, new_position) {
+            (0, 1) => Some(Command::Add),
+            (0, 2) => Some(Command::Divide),
+            (0, 3) => Some(Command::Greater),
+            (0, 4) => Some(Command::Duplicate),
+            (0, 5) => Some(Command::InChar),
+            (1, 0) => Some(Command::Push),
+            (1, 1) => Some(Command::Subtract),
+            (1, 2) => Some(Command::Mod),
+            (1, 3) => Some(Command::Pointer),
+            (1, 4) => Some(Command::Roll),
+            (1, 5) => Some(Command::OutNumber),
+            (2, 0) => Some(Command::Pop),
+            (2, 1) => Some(Command::Multiply),
+            (2, 2) => Some(Command::Not),
+            (2, 3) => Some(Command::Switch),
+            (2, 4) => Some(Command::InNumber),
+            (2, 5) => Some(Command::OutChar),
+            _ => None,
+        }
+    }
+
+    fn light_and_hue_difference(&self, coord1: (usize, usize), coord2: (usize, usize)) -> (u8, u8) {
+        if let Some(block1) = self.block_for_coord(coord1) {
+            if let Some(block2) = self.block_for_coord(coord2) {
+                let light_diff = (block2.light + LIGHT_LEVELS - block1.light) % LIGHT_LEVELS;
+                let hue_diff = (block2.hue + HUE_LEVELS - block1.hue) % HUE_LEVELS;
+                return (light_diff, hue_diff);
+            }
+        }
+        (0, 0)
+    }
+
+    fn block_for_coord(&self, coord: (usize, usize)) -> Option<&Block> {
+        let codel = self.codel_for(coord);
+        if let Codel::Color { block_index, .. } = codel {
+            if let Some(block_index) = block_index {
+                return Some(&self.blocks[*block_index]);
+            }
+        }
+        None
     }
 
     fn find_next_codel(&self) -> Option<((usize, usize), bool)> {
         let current_block_index = match self.current_codel() {
-            Codel::Color {
-                x: _x,
-                y: _y,
-                hue: _hue,
-                light: _light,
-                block_index,
-            } => block_index,
+            Codel::Color { block_index, .. } => block_index,
             _ => return None,
         };
         let &current_block_index = match current_block_index {
@@ -270,17 +311,13 @@ impl Interpreter {
         let mut traveled_through_white = false;
         while let Some(next_codel) = self.find_next_codel_from(coord) {
             match *next_codel {
-                Codel::Black { x: _, y: _ } => break,
+                Codel::Black { .. } => break,
                 Codel::White { x, y } => {
                     traveled_through_white = true;
                     coord = (x, y);
                 }
                 Codel::Color {
-                    x,
-                    y,
-                    hue: _,
-                    light: _,
-                    block_index,
+                    x, y, block_index, ..
                 } => {
                     let block_index = match block_index {
                         Some(i) => i,
@@ -347,15 +384,11 @@ impl Interpreter {
         self.alive = false;
     }
 
-    fn assign_codels_to_blocks(&mut self) -> () {
+    fn assign_codels_to_blocks(&mut self) {
         for row in self.canvas.iter_mut() {
             for codel in row.iter_mut() {
                 if let Codel::Color {
-                    block_index,
-                    x,
-                    y,
-                    hue: _,
-                    light: _,
+                    block_index, x, y, ..
                 } = codel
                 {
                     *block_index = self
@@ -367,16 +400,12 @@ impl Interpreter {
         }
     }
 
-    fn detect_blocks(&mut self) -> () {
+    fn detect_blocks(&mut self) {
         let mut visited: Vec<Vec<bool>> = vec![vec![false; self.width]; self.height];
         for row in self.canvas.iter() {
             for codel in row.iter() {
                 if let Codel::Color {
-                    block_index: _,
-                    x,
-                    y,
-                    hue,
-                    light,
+                    x, y, hue, light, ..
                 } = codel
                 {
                     if visited[*y][*x] {
@@ -405,11 +434,7 @@ impl Interpreter {
                         if let Some(other_coord) = coord_right(coord, self.width, self.height) {
                             let other_codel = &self.canvas[other_coord.1][other_coord.0];
                             if let Codel::Color {
-                                block_index: _,
-                                x,
-                                y,
-                                hue,
-                                light,
+                                x, y, hue, light, ..
                             } = other_codel
                             {
                                 if !visited[*y][*x] && block.hue == *hue && block.light == *light {
@@ -422,11 +447,7 @@ impl Interpreter {
                         if let Some(other_coord) = coord_left(coord, self.width, self.height) {
                             let other_codel = &self.canvas[other_coord.1][other_coord.0];
                             if let Codel::Color {
-                                block_index: _,
-                                x,
-                                y,
-                                hue,
-                                light,
+                                x, y, hue, light, ..
                             } = other_codel
                             {
                                 if !visited[*y][*x] && block.hue == *hue && block.light == *light {
@@ -439,11 +460,7 @@ impl Interpreter {
                         if let Some(other_coord) = coord_up(coord, self.width, self.height) {
                             let other_codel = &self.canvas[other_coord.1][other_coord.0];
                             if let Codel::Color {
-                                block_index: _,
-                                x,
-                                y,
-                                hue,
-                                light,
+                                x, y, hue, light, ..
                             } = other_codel
                             {
                                 if !visited[*y][*x] && block.hue == *hue && block.light == *light {
@@ -456,11 +473,7 @@ impl Interpreter {
                         if let Some(other_coord) = coord_down(coord, self.width, self.height) {
                             let other_codel = &self.canvas[other_coord.1][other_coord.0];
                             if let Codel::Color {
-                                block_index: _,
-                                x,
-                                y,
-                                hue,
-                                light,
+                                x, y, hue, light, ..
                             } = other_codel
                             {
                                 if !visited[*y][*x] && block.hue == *hue && block.light == *light {
@@ -474,7 +487,7 @@ impl Interpreter {
         }
     }
 
-    fn find_exits_for_blocks(&mut self) -> () {
+    fn find_exits_for_blocks(&mut self) {
         for block in self.blocks.iter_mut() {
             block.block_exit = Some(BlockExit::from_coords(&block.codel_coordinates));
         }
