@@ -342,9 +342,23 @@ impl Command {
                     }
                 }
             }
-            _ => {
-                if verbose_logging {
-                    eprintln!("command not implemented: {:?}", self);
+            Command::InNumber => {
+                let mut buffer = String::new();
+                if let Ok(_) = std::io::stdin().read_line(&mut buffer) {
+                    if let Ok(num) = buffer.trim().parse::<i64>() {
+                        if verbose_logging {
+                            eprintln!("executed IN_NUM({})", num);
+                        }
+                        stack.push(num);
+                    } else {
+                        if verbose_logging {
+                            eprintln!("skip executing IN_NUM() because input could not be parse as a number");
+                        }
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing IN_NUM() because input could read");
+                    }
                 }
             }
         }
