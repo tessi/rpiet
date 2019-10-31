@@ -3,6 +3,7 @@ extern crate png;
 
 mod block_exit;
 mod cmd_options;
+mod command;
 mod interpreter;
 mod utils;
 
