@@ -189,13 +189,31 @@ impl Command {
                         eprintln!("execute NOT({})", a);
                     }
                     if a == 0 {
-                        stack.push(1)
+                        stack.push(1);
                     } else {
-                        stack.push(0)
+                        stack.push(0);
                     }
                 } else {
                     if verbose_logging {
                         eprintln!("skip executing NOT due to empty stack");
+                    }
+                }
+            }
+            Command::Greater => {
+                if stack.len() >= 2 {
+                    let a = stack.pop().unwrap();
+                    let b = stack.pop().unwrap();
+                    if verbose_logging {
+                        eprintln!("execute GREATER({}, {})", b, a);
+                    }
+                    if b > a {
+                        stack.push(1);
+                    } else {
+                        stack.push(0);
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing GREATER due to not enough values on the stack");
                     }
                 }
             }
