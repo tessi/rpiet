@@ -299,6 +299,18 @@ impl Command {
                     }
                 }
             }
+            Command::OutNumber => {
+                if let Some(last) = stack.pop() {
+                    if verbose_logging {
+                        eprintln!("execute OUT_NUM({})", last);
+                    }
+                    print!("{}", last);
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing OUT_NUM due to empty stack");
+                    }
+                }
+            }
             Command::OutChar => {
                 if let Some(last) = stack.pop() {
                     if last >= 0 && last <= (u32::max_value() as i64) {
