@@ -68,7 +68,14 @@ enum Command {
 }
 
 impl Command {
-    fn execute(&self, stack: &mut Vec<i64>, block_size: usize, verbose_logging: bool) {
+    fn execute(
+        &self,
+        stack: &mut Vec<i64>,
+        dp: &mut DirectionPointer,
+        cc: &mut CodelChooser,
+        block_size: usize,
+        verbose_logging: bool,
+    ) {
         match self {
             Command::Push => {
                 if verbose_logging {
@@ -217,6 +224,43 @@ impl Command {
                     }
                 }
             }
+            Command::Pointer => {
+                if let Some(a) = stack.pop() {
+                    if verbose_logging {
+                        eprintln!("execute POINTER({})", a);
+                    }
+                    match a % 4 {
+                        3 => turn_direction_pointer(dp, 3),
+                        2 => turn_direction_pointer(dp, 2),
+                        1 => turn_direction_pointer(dp, 1),
+                        -1 => turn_direction_pointer(dp, 3),
+                        -2 => turn_direction_pointer(dp, 2),
+                        -3 => turn_direction_pointer(dp, 1),
+                        _ => (),
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing POINTER due to empty stack");
+                    }
+                }
+            }
+            Command::Switch => {
+                if let Some(a) = stack.pop() {
+                    if verbose_logging {
+                        eprintln!("execute SWITCH({})", a);
+                    }
+                    if a % 2 == 1 {
+                        *cc = match cc {
+                            CodelChooser::Left => CodelChooser::Right,
+                            CodelChooser::Right => CodelChooser::Left,
+                        }
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing SWITCH due to empty stack");
+                    }
+                }
+            }
             Command::OutChar => {
                 if let Some(last) = stack.pop() {
                     if last >= 0 && last <= (u32::max_value() as i64) {
@@ -251,6 +295,19 @@ impl Command {
             }
         }
     }
+}
+
+fn turn_direction_pointer(dp: &mut DirectionPointer, turns: u32) {
+    if turns == 0 {
+        return;
+    }
+    *dp = match dp {
+        DirectionPointer::Right => DirectionPointer::Down,
+        DirectionPointer::Down => DirectionPointer::Left,
+        DirectionPointer::Left => DirectionPointer::Up,
+        DirectionPointer::Up => DirectionPointer::Right,
+    };
+    turn_direction_pointer(dp, turns - 1)
 }
 
 #[derive(Debug)]
@@ -428,7 +485,13 @@ impl Interpreter {
         if let Codel::Color { block_index, .. } = self.canvas[old_position.1][old_position.0] {
             if let Some(block_index) = block_index {
                 let block_size = self.blocks[block_index].size();
-                command.execute(&mut self.stack, block_size, self.verbose_logging);
+                command.execute(
+                    &mut self.stack,
+                    &mut self.dp,
+                    &mut self.cc,
+                    block_size,
+                    self.verbose_logging,
+                );
             }
         }
     }
