@@ -265,6 +265,7 @@ impl Command {
                 if stack.len() >= 2 {
                     let rolls = stack.pop().unwrap();
                     let depth = stack.pop().unwrap();
+                    let rolls = rolls % depth;
                     if depth < 0 {
                         if verbose_logging {
                             eprintln!("skip executing ROLL due to a negative roll depth");
@@ -272,33 +273,27 @@ impl Command {
                         stack.push(depth);
                         stack.push(rolls);
                     } else {
-                        if rolls > depth {
+                        if stack.len() < depth as usize {
                             if verbose_logging {
-                                eprintln!("skip executing ROLL because it cannot roll more than the given depth");
+                                eprintln!(
+                                    "skip executing ROLL due to not enough values on the stack"
+                                );
                             }
                             stack.push(depth);
                             stack.push(rolls);
                         } else {
-                            if stack.len() < depth as usize {
-                                if verbose_logging {
-                                    eprintln!("skip executing ROLL due to not enough values on the stack");
+                            if verbose_logging {
+                                eprintln!("execute ROLL({}, {})", depth, rolls);
+                            }
+                            if depth != 0 {
+                                let mut substack: Vec<_> =
+                                    stack.drain(stack.len() - depth as usize..).collect();
+                                if rolls > 0 {
+                                    substack.rotate_right(rolls as usize);
+                                } else {
+                                    substack.rotate_left((rolls * -1) as usize);
                                 }
-                                stack.push(depth);
-                                stack.push(rolls);
-                            } else {
-                                if verbose_logging {
-                                    eprintln!("execute ROLL({}, {})", depth, rolls);
-                                }
-                                if depth != 0 {
-                                    let mut substack: Vec<_> =
-                                        stack.drain(stack.len() - depth as usize..).collect();
-                                    if rolls > 0 {
-                                        substack.rotate_right(rolls as usize);
-                                    } else {
-                                        substack.rotate_left((rolls * -1) as usize);
-                                    }
-                                    stack.append(&mut substack);
-                                }
+                                stack.append(&mut substack);
                             }
                         }
                     }
