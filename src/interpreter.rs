@@ -66,6 +66,24 @@ enum Command {
     OutChar,
 }
 
+impl Command {
+    fn execute(&self, stack: &mut Vec<i64>, block_size: usize, verbose_logging: bool) {
+        match self {
+            Command::Push => {
+                if verbose_logging {
+                    eprintln!("execute PUSH({})", block_size);
+                }
+                stack.push(block_size as i64)
+            }
+            _ => {
+                if verbose_logging {
+                    eprintln!("command not implemented: {:?}", self);
+                }
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 enum Counters {
     DirectionPointer,
@@ -105,6 +123,10 @@ impl Block {
         } else {
             None
         }
+    }
+
+    fn size(&self) -> usize {
+        self.codel_coordinates.len()
     }
 }
 
@@ -216,31 +238,32 @@ impl Interpreter {
             self.exit();
             return;
         }
-        let command = match self.find_next_codel() {
+        match self.find_next_codel() {
             Some((new_position, traveled_through_white)) => {
                 self.toggled_pointers_without_move = 0;
                 let old_position = self.current_position;
                 self.current_position = new_position;
                 if !traveled_through_white {
-                    self.command_to_execute(old_position, new_position)
-                } else {
-                    None
+                    let cmd = self.command_to_execute(old_position, new_position);
+                    self.execute(cmd.unwrap(), old_position);
                 }
             }
             None => {
                 self.toogle_counters();
                 self.toggled_pointers_without_move += 1;
-                None
             }
-        };
-        if let Some(command) = command {
-            self.execute(command)
         };
     }
 
-    fn execute(&mut self, command: Command) {
+    fn execute(&mut self, command: Command, old_position: (usize, usize)) {
         if self.verbose_logging {
             eprintln!("Executing Command: {:?}", command);
+        }
+        if let Codel::Color { block_index, .. } = self.canvas[old_position.1][old_position.0] {
+            if let Some(block_index) = block_index {
+                let block_size = self.blocks[block_index].size();
+                command.execute(&mut self.stack, block_size, self.verbose_logging);
+            }
         }
     }
 
