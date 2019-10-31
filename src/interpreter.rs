@@ -141,6 +141,26 @@ impl Command {
                     }
                 }
             }
+            Command::Divide => {
+                if stack.len() >= 2 {
+                    let a = stack.pop().unwrap();
+                    let b = stack.pop().unwrap();
+                    if a == 0 {
+                        if verbose_logging {
+                            eprintln!("skip executing DIVIDE due to not being able to divide by zero");
+                        }
+                    } else {
+                        if verbose_logging {
+                            eprintln!("execute DIVIDE({}, {})", a, b);
+                        }
+                        stack.push(b / a);
+                    }
+                } else {
+                    if verbose_logging {
+                        eprintln!("skip executing DIVIDE due to not enough values on the stack");
+                    }
+                }
+            }
             Command::OutChar => {
                 if let Some(last) = stack.pop() {
                     if last >= 0 && last <= (u32::max_value() as i64) {
