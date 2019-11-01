@@ -1,6 +1,7 @@
 extern crate clap;
 extern crate png;
 
+mod block;
 mod block_exit;
 mod cmd_options;
 mod command;

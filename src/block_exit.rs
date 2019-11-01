@@ -3,7 +3,6 @@
  * Depending on the DP and CC pointers, blocks have different exit points, which
  * we cache in this structure instead of calculating them on the fly.
  */
-
 #[derive(Debug)]
 pub struct BlockExit {
     pub exits: [[(usize, usize); 2]; 4],

@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::block::Block;
 use crate::block_exit::BlockExit;
 use crate::cmd_options::CmdOptions;
 use crate::command::Command;
@@ -13,58 +14,6 @@ use crate::counters::{CodelChooser, Counters, DirectionPointer};
 const MAX_ALLOWED__POINTER_TOGGLES: u8 = 8;
 const LIGHT_LEVELS: u8 = 3;
 const HUE_LEVELS: u8 = 6;
-
-#[derive(Debug)]
-struct Block {
-    codel_coordinates: Vec<(usize, usize)>,
-    hue: u8,
-    light: u8,
-    block_exit: Option<BlockExit>,
-}
-
-impl Block {
-    fn exit_coordinates(&self, dp: &DirectionPointer, cc: &CodelChooser) -> Option<(usize, usize)> {
-        if let Some(block_exit) = &self.block_exit {
-            let coord = match dp {
-                DirectionPointer::Up => match cc {
-                    CodelChooser::Right => block_exit.exits[0][1],
-                    CodelChooser::Left => block_exit.exits[0][0],
-                },
-                DirectionPointer::Right => match cc {
-                    CodelChooser::Right => block_exit.exits[1][1],
-                    CodelChooser::Left => block_exit.exits[1][0],
-                },
-                DirectionPointer::Down => match cc {
-                    CodelChooser::Right => block_exit.exits[2][0],
-                    CodelChooser::Left => block_exit.exits[2][1],
-                },
-                DirectionPointer::Left => match cc {
-                    CodelChooser::Right => block_exit.exits[3][0],
-                    CodelChooser::Left => block_exit.exits[3][1],
-                },
-            };
-            Some(coord)
-        } else {
-            None
-        }
-    }
-
-    fn size(&self) -> usize {
-        self.codel_coordinates.len()
-    }
-}
-
-impl fmt::Display for Block {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Block<codel_count: {}, hue: {}, light: {}>",
-            self.codel_coordinates.len(),
-            self.hue,
-            self.light
-        )
-    }
-}
 
 #[derive(Debug)]
 enum Codel {
