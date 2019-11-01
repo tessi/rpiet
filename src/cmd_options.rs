@@ -9,12 +9,14 @@ pub struct CmdOptions<'a> {
     pub file_path: &'a str,
 }
 
-fn is_png(val: String) -> Result<(), String> {
+fn is_valid_file_name(val: String) -> Result<(), String> {
     if val.ends_with(".png") {
-        Ok(())
-    } else {
-        Err(String::from("the file format must be png."))
+        return Ok(());
     }
+    if val.ends_with(".gif") {
+        return Ok(());
+    }
+    Err(String::from("the file format must one of {png, gif}."))
 }
 
 pub fn clap_options() -> ArgMatches<'static> {
@@ -24,11 +26,11 @@ pub fn clap_options() -> ArgMatches<'static> {
         .about("An interpreter for the piet programming language")
         .arg(
             Arg::with_name("file")
-                .help("The image to execute. Supports png files only")
+                .help("The image to execute. Supports png and gif files only")
                 .default_value("input.png")
                 .index(1)
                 .required(true)
-                .validator(is_png),
+                .validator(is_valid_file_name),
         )
         .arg(
             Arg::with_name("codel_size")

@@ -9,7 +9,7 @@ mod counters;
 mod interpreter;
 mod utils;
 
-use cmd_options::*;
+use cmd_options::{clap_options, cmd_options};
 use interpreter::Interpreter;
 use std::fs::File;
 use std::process;
