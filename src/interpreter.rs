@@ -3,6 +3,7 @@ use std::fmt;
 use crate::block_exit::BlockExit;
 use crate::cmd_options::CmdOptions;
 use crate::command::Command;
+use crate::counters::{CodelChooser, Counters, DirectionPointer};
 
 // TODO: this file is too big, needs being split up
 // TODO: we needs tests (also for other modules)
@@ -12,46 +13,6 @@ use crate::command::Command;
 const MAX_ALLOWED__POINTER_TOGGLES: u8 = 8;
 const LIGHT_LEVELS: u8 = 3;
 const HUE_LEVELS: u8 = 6;
-
-#[derive(Debug)]
-pub enum DirectionPointer {
-    Up,
-    Right,
-    Down,
-    Left,
-}
-
-impl fmt::Display for DirectionPointer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            DirectionPointer::Up => write!(f, "up"),
-            DirectionPointer::Right => write!(f, "right"),
-            DirectionPointer::Down => write!(f, "down"),
-            DirectionPointer::Left => write!(f, "left"),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum CodelChooser {
-    Right,
-    Left,
-}
-
-impl fmt::Display for CodelChooser {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            CodelChooser::Right => write!(f, "right"),
-            CodelChooser::Left => write!(f, "left"),
-        }
-    }
-}
-
-#[derive(Debug)]
-enum Counters {
-    DirectionPointer,
-    CodelChooser,
-}
 
 #[derive(Debug)]
 struct Block {

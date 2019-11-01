@@ -1,6 +1,6 @@
 use std::char;
 
-use crate::interpreter::{CodelChooser, DirectionPointer};
+use crate::counters::{CodelChooser, DirectionPointer};
 
 #[derive(Debug)]
 pub enum Command {
