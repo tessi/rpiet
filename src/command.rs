@@ -24,6 +24,29 @@ pub enum Command {
 }
 
 impl Command {
+    pub fn from(diffs: (u8, u8)) -> Option<Command> {
+        match diffs {
+            (0, 1) => Some(Command::Add),
+            (0, 2) => Some(Command::Divide),
+            (0, 3) => Some(Command::Greater),
+            (0, 4) => Some(Command::Duplicate),
+            (0, 5) => Some(Command::InChar),
+            (1, 0) => Some(Command::Push),
+            (1, 1) => Some(Command::Subtract),
+            (1, 2) => Some(Command::Mod),
+            (1, 3) => Some(Command::Pointer),
+            (1, 4) => Some(Command::Roll),
+            (1, 5) => Some(Command::OutNumber),
+            (2, 0) => Some(Command::Pop),
+            (2, 1) => Some(Command::Multiply),
+            (2, 2) => Some(Command::Not),
+            (2, 3) => Some(Command::Switch),
+            (2, 4) => Some(Command::InNumber),
+            (2, 5) => Some(Command::OutChar),
+            _ => None,
+        }
+    }
+
     pub fn execute(
         &self,
         stack: &mut Vec<i64>,
