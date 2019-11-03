@@ -1,6 +1,6 @@
 [package]
 name = "rpiet"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Philipp Tessenow <philipp@tessenow.org>"]
 edition = "2018"
 
@@ -8,6 +8,10 @@ description = "An interpreter for Piet, the esoteric programming language"
 documentation = "https://github.com/tessi/rpiet/"
 homepage = "https://github.com/tessi/rpiet/"
 repository = "https://github.com/tessi/rpiet/"
+readme="README.md"
+categories = ["development-tools"]
+keywords = ["piet", "interpreter", "programming", "esoteric"]
+maintenance = { status = "experimental" }
 
 license = "MIT"
 
