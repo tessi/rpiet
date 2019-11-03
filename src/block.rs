@@ -58,3 +58,9 @@ impl fmt::Display for Block {
         )
     }
 }
+
+impl std::cmp::PartialEq for Block {
+    fn eq(&self, rhs: &Block) -> bool {
+        self.codel_coordinates == rhs.codel_coordinates
+    }
+}

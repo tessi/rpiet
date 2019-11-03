@@ -112,13 +112,17 @@ impl Interpreter {
             return;
         }
         match self.find_next_codel() {
-            Some((new_position, traveled_through_white)) => {
+            Some((new_position, traveled_through_white, reached_new_block)) => {
                 self.toggled_pointers_without_move = 0;
                 let old_position = self.current_position;
                 self.current_position = new_position;
-                if !traveled_through_white {
-                    let cmd = self.command_to_execute(old_position, new_position);
-                    self.execute(cmd.unwrap(), old_position);
+                if reached_new_block {
+                    if !traveled_through_white {
+                        let cmd = self.command_to_execute(old_position, new_position);
+                        self.execute(cmd.unwrap(), old_position);
+                    }
+                } else {
+                    self.toogle_counters();
                 }
             }
             None => {
@@ -172,20 +176,15 @@ impl Interpreter {
         None
     }
 
-    fn find_next_codel(&self) -> Option<((usize, usize), bool)> {
-        let current_block_index = match self.current_codel() {
-            Codel::Color { block_index, .. } => block_index,
-            _ => return None,
-        };
-        let &current_block_index = match current_block_index {
-            Some(i) => i,
-            None => return None,
-        };
+    fn current_block(&self) -> Option<&Block> {
+        self.block_for_coord(self.current_position)
+    }
 
-        let coord = self.blocks[current_block_index].exit_coordinates(&self.dp, &self.cc);
-        let mut coord = match coord {
-            Some(coord) => coord,
-            None => return None,
+    fn find_next_codel(&self) -> Option<((usize, usize), bool, bool)> {
+        let origin_block = self.current_block();
+        let mut coord = match origin_block {
+            Some(block) => block.exit_coordinates(&self.dp, &self.cc)?,
+            None => (self.current_position.0, self.current_position.1),
         };
 
         let mut traveled_through_white = false;
@@ -199,18 +198,56 @@ impl Interpreter {
                 Codel::Color {
                     x, y, block_index, ..
                 } => {
-                    let block_index = match block_index {
-                        Some(i) => i,
-                        None => return None,
-                    };
-                    if current_block_index != block_index {
-                        return Some(((x, y), traveled_through_white));
+                    let block_index = block_index?;
+                    match origin_block {
+                        Some(origin_block) => {
+                            if origin_block != &self.blocks[block_index] {
+                                return Some(((x, y), traveled_through_white, true));
+                            }
+                        }
+                        None => {
+                            // must travel through white when not coming from a color with a block (= color codel)
+                            // this can happen e.g. when arriving ad black/edge while sliding through a white area
+                            return Some(((x, y), true, true));
+                        }
                     }
                     coord = (x, y);
                 }
             }
         }
-        None
+        // reached an end of our current travel in the given direction (black codel or picture edge)
+        match origin_block {
+            Some(_) => {
+                match self.block_for_coord(coord) {
+                    Some(_) => {
+                        // we ended in a block, but it is the same block as before (the case of a different block is handled
+                        // with an early return above). This means we could not *actually* move out of the block and cannot report a new position
+                        None
+                    }
+                    None => {
+                        // we started from a colored codel (-> with block) and arrived at a colored codel, so we moved but ended
+                        // in a position without executable command (since that case is handled with an early return above).
+                        // pointers (dp,cc) need to be toggled and jouney needs to continue from the current coords
+                        // must travel through white when arriving at a color with a block (= color codel)
+                        Some((coord, true, false))
+                    }
+                }
+            }
+            None => {
+                if self.current_position != coord {
+                    // we started from a not-colored codel (-> no block) and arrived at a non-colored codel, so we moved but ended
+                    // in a position without executable command (since that case is handled with an early return above).
+                    // pointers (dp,cc) need to be toggled and jouney needs to continue from the current coords
+                    // must travel through white when not coming from a color with a block (= color codel)
+                    // this can happen e.g. when arriving ad black/edge while sliding through a white area
+                    Some((coord, true, false))
+                } else {
+                    // we did not move at all, so we cannod return a new position
+                    None
+                }
+
+            }
+        }
     }
 
     fn find_next_codel_from(&self, start: (usize, usize)) -> Option<&Codel> {
@@ -221,10 +258,6 @@ impl Interpreter {
             DirectionPointer::Left => coord_left(start, self.width, self.height),
         };
         next_coords.map(|coord| self.codel_for(coord))
-    }
-
-    fn current_codel(&self) -> &Codel {
-        self.codel_for(self.current_position)
     }
 
     fn codel_for(&self, coord: (usize, usize)) -> &Codel {
