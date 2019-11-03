@@ -320,6 +320,7 @@ impl Command {
                 }
             }
             Command::InNumber => {
+                eprintln!("num? ");
                 let mut buffer = String::new();
                 if let Ok(_) = std::io::stdin().read_line(&mut buffer) {
                     if let Ok(num) = buffer.trim().parse::<i64>() {
@@ -339,6 +340,7 @@ impl Command {
                 }
             }
             Command::InChar => {
+                eprintln!("char? ");
                 let mut buffer = String::new();
                 if let Ok(_) = std::io::stdin().read_line(&mut buffer) {
                     if let Some(chr) = buffer.chars().next() {
