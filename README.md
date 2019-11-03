@@ -9,13 +9,33 @@ This is a piet interpreter written in Rust.
 Piet is a programming language which aims to treat images similar to those of the artist **Piet Mondrian** as executables.
 Read more about how images are executed [at the Piet homepage](http://www.dangermouse.net/esoteric/piet.html).
 
+## Installation and usage
+
+Install `rpiet` via `cargo` (the Rust package manager). This requires an up-to-date Rust being installed.
+
+    cargo install rpiet
+
+Then run a GIF or PNG image with
+
+    rpiet sample_images/hello_world_globe.png
+
+or explore the command line options it takes with
+
+    rpiet --help
+
+It is possible to:
+
+* specify the codel size (`-c`, `--codel-size <codel_size>`)
+* limit the maximum number of steps the interpreter executes in the image (`-e`, `--max-steps <max_steps>`)
+* print debugging information (`-v`, `--verbose`) which allows the user to see which path the interpreter takes through the image
+
 ## State of this crate
 
-It is possible to run some Piet programs in it (I verified a couple of hello world images from the Piet homepage), please report any bugs you find - the specification is somewhat loose :)
+It is possible to run Piet programs in it (I verified a couple from the Piet homepage), please report any bugs you find - the specification is somewhat loose :)
 
-"Sliding" (wording of the spec, not mine) through white codels may be buggy when reaching black/edge codels.
+Input handling is currently not strictly conform to the spec. We read lines of input -- the spec is not very detailed here, but I think we should read only the necessary bytes (InChar -> one byte, InNum -> however many bytes form a valid number, but no more).
 
-The implementation is sometimes hacky - partly because I'm starting with Rust and am not yet writing ideomatic Rust everywhere, partly because I wanted things to work first and make them beautiful later.
+The binary was tested manually, but we don't have automated tests yet. Also, code documentation is sparse.
 
 ## Contributing
 
