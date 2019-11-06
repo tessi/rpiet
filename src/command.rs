@@ -1,4 +1,5 @@
 use std::char;
+use std::io::Read;
 
 use crate::counters::{CodelChooser, DirectionPointer};
 
@@ -320,7 +321,6 @@ impl Command {
                 }
             }
             Command::InNumber => {
-                eprintln!("num? ");
                 let mut buffer = String::new();
                 if let Ok(_) = std::io::stdin().read_line(&mut buffer) {
                     if let Ok(num) = buffer.trim().parse::<i64>() {
@@ -340,22 +340,26 @@ impl Command {
                 }
             }
             Command::InChar => {
-                eprintln!("char? ");
-                let mut buffer = String::new();
-                if let Ok(_) = std::io::stdin().read_line(&mut buffer) {
-                    if let Some(chr) = buffer.chars().next() {
+                let input: Option<u8> = std::io::stdin()
+                    .bytes()
+                    .next()
+                    .and_then(|result| result.ok());
+
+                match input {
+                    Some(byte) => {
                         if verbose_logging {
-                            eprintln!("executed IN_CHAR({} -> {})", chr, chr as i64);
+                            eprintln!(
+                                "executed IN_CHAR({} -> {})",
+                                char::from_u32(byte as u32).unwrap(),
+                                byte as i64
+                            );
                         }
-                        stack.push(chr as i64);
-                    } else {
-                        if verbose_logging {
-                            eprintln!("skip executing IN_CHAR() because input was empty");
-                        }
+                        stack.push(byte as i64);
                     }
-                } else {
-                    if verbose_logging {
-                        eprintln!("skip executing IN_CHAR() because input could read");
+                    None => {
+                        if verbose_logging {
+                            eprintln!("skip executing IN_CHAR() because input was empty or could not be read");
+                        }
                     }
                 }
             }

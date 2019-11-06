@@ -245,7 +245,6 @@ impl Interpreter {
                     // we did not move at all, so we cannod return a new position
                     None
                 }
-
             }
         }
     }
