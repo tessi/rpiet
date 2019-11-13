@@ -33,7 +33,7 @@ It is possible to:
 
 It is possible to run Piet programs in it (I verified a couple from the Piet homepage), please report any bugs you find - the specification is somewhat loose :)
 
-Input handling is currently not strictly conform to the spec. We read lines of input -- the spec is not very detailed here, but I think we should read only the necessary bytes (InChar -> one byte, InNum -> however many bytes form a valid number, but no more).
+Input handling is currently not strictly conform to the spec. We read lines of input for InNum -- the spec is not very detailed here, but I think we should read only the necessary bytes (however many bytes form a valid number, but no more).
 
 The binary was tested manually, but we don't have automated tests yet. Also, code documentation is sparse.
 
