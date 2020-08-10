@@ -16,6 +16,6 @@ maintenance = { status = "experimental" }
 license = "MIT"
 
 [dependencies]
-clap = "~2.33.1"
+clap = "~2.33.2"
 png = "~0.16.7"
 gif = "~0.10.3"
