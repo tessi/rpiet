@@ -18,4 +18,4 @@ license = "MIT"
 [dependencies]
 clap = "~2.33.3"
 png = "~0.16.8"
-gif = "~0.10.3"
+gif = "~0.12.0"
